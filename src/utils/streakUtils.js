@@ -1,9 +1,7 @@
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { format, subDays } from 'date-fns'
+import { format, subDays, parseISO } from 'date-fns'
 
-// Calculate streak from all study logs
-// Streak = consecutive days studied up to today
 export async function calculateAndSaveStreak(uid) {
   try {
     const snap = await getDocs(query(
@@ -11,41 +9,47 @@ export async function calculateAndSaveStreak(uid) {
       where('userId', '==', uid)
     ))
 
-    // Get unique dates that have study logs
-    const datesWithStudy = new Set(
-      snap.docs.map(d => d.data().date).filter(Boolean)
-    )
+    // Unique dates sorted newest → oldest
+    const datesWithStudy = [
+      ...new Set(snap.docs.map(d => d.data().date).filter(Boolean))
+    ].sort((a, b) => b.localeCompare(a))
 
-    if (datesWithStudy.size === 0) {
+    if (datesWithStudy.length === 0) {
       await updateDoc(doc(db, 'users', uid), { streak: 0 })
       return 0
     }
 
-    // Count streak going back from today
-    let streak = 0
-    let checkDate = new Date()
+    const today     = format(new Date(), 'yyyy-MM-dd')
+    const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+    const mostRecent = datesWithStudy[0]
 
-    // Check today first — if no study today, start from yesterday
-    const todayStr = format(checkDate, 'yyyy-MM-dd')
-    if (!datesWithStudy.has(todayStr)) {
-      checkDate = subDays(checkDate, 1)
+    // If last study was more than yesterday, streak is 0
+    if (mostRecent !== today && mostRecent !== yesterday) {
+      await updateDoc(doc(db, 'users', uid), { streak: 0 })
+      return 0
     }
 
-    // Count consecutive days going backward
-    while (true) {
-      const dateStr = format(checkDate, 'yyyy-MM-dd')
-      if (datesWithStudy.has(dateStr)) {
+    // Walk backward counting consecutive days
+    let streak  = 0
+    let expected = mostRecent  // the date we expect next
+
+    for (const date of datesWithStudy) {
+      if (date === expected) {
         streak++
-        checkDate = subDays(checkDate, 1)
-      } else {
+        // next expected date is one day earlier
+        expected = format(subDays(parseISO(expected), 1), 'yyyy-MM-dd')
+      } else if (date < expected) {
+        // gap — stop counting
         break
       }
+      // date > expected means duplicate dates in sorted list — skip
     }
 
     await updateDoc(doc(db, 'users', uid), { streak })
+    console.log(`Streak for ${uid}: ${streak}`)
     return streak
   } catch (err) {
-    console.error('Streak calc error:', err)
+    console.error('Streak error:', err)
     return 0
   }
 }
