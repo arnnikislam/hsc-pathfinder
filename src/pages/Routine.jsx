@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import BottomNav from '../components/BottomNav'
-import { BookOpen, ZoomIn, X, ExternalLink } from 'lucide-react'
+import { BookOpen, ZoomIn, X } from 'lucide-react'
 
-// imgbb viewer page links (user provided)
-// To get direct image links: open each link → long press image → Copy image address
 const ROUTINES = {
-  science:  { page: 'https://ibb.co/zMJ9qYL',  direct: 'https://i.ibb.co/zMJ9qYL/image.jpg'  },
-  commerce: { page: 'https://ibb.co/chq6VBw8', direct: 'https://i.ibb.co/chq6VBw8/image.jpg' },
-  arts:     { page: 'https://ibb.co/xZbPMrQ',  direct: 'https://i.ibb.co/xZbPMrQ/image.jpg'  },
+  science:  'https://i.ibb.co/qFBq2jJk/file-00000000a97871faa79181a29aee85bc.png',
+  arts:     'https://i.ibb.co/JjSJxfDW/HSC-Routine-2026-1.jpg',
+  commerce: 'https://i.ibb.co/q3vtwCCV/file-0000000032f07206a48e968de4b29cec.png',
 }
 
 const GROUPS = ['science', 'arts', 'commerce']
@@ -18,27 +16,24 @@ export default function Routine() {
   const isBn = i18n.language === 'bn'
   const [activeGroup, setActiveGroup] = useState('science')
   const [zoomed, setZoomed] = useState(false)
-  const [imgLoaded, setImgLoaded] = useState({})
   const [imgError, setImgError] = useState({})
+  const [imgLoaded, setImgLoaded] = useState({})
 
-  const routine = ROUTINES[activeGroup]
+  const url = ROUTINES[activeGroup]
   const hasError = imgError[activeGroup]
   const isLoaded = imgLoaded[activeGroup]
 
   return (
     <div className="min-h-screen bg-surface-900">
       <div className="page-container pt-6">
-
-        <div className="mb-5">
+        <div className="mb-5 pr-16">
           <div className="flex items-center gap-2 mb-1">
             <BookOpen size={20} className="text-brand-400" />
             <h1 className={`text-xl font-display font-bold text-white ${isBn ? 'font-bengali' : ''}`}>
               {t('routine.title')}
             </h1>
           </div>
-          <p className={`text-white/40 text-xs ${isBn ? 'font-bengali' : ''}`}>
-            {t('routine.subtitle')}
-          </p>
+          <p className={`text-white/40 text-xs ${isBn ? 'font-bengali' : ''}`}>{t('routine.subtitle')}</p>
         </div>
 
         {/* Group tabs */}
@@ -47,10 +42,10 @@ export default function Routine() {
             const icons = { science:'🔬', arts:'🎨', commerce:'💼' }
             return (
               <button key={g} onClick={() => setActiveGroup(g)}
-                className={`flex flex-col items-center py-3 rounded-xl border transition-all duration-200 ${
+                className={`flex flex-col items-center py-3 rounded-xl border transition-all ${
                   activeGroup === g
                     ? 'bg-brand-500/20 border-brand-500/40 text-brand-400'
-                    : 'bg-surface-800 border-white/5 text-white/50 hover:text-white'
+                    : 'bg-surface-800 border-white/5 text-white/50'
                 }`}>
                 <span className="text-xl mb-1">{icons[g]}</span>
                 <span className={`text-xs font-display font-medium ${isBn ? 'font-bengali text-[10px]' : ''}`}>
@@ -61,80 +56,57 @@ export default function Routine() {
           })}
         </div>
 
-        {/* Image card */}
-        <div className="card relative overflow-hidden">
-          {/* Loading skeleton */}
+        {/* Image */}
+        <div className="card relative">
           {!isLoaded && !hasError && (
             <div className="w-full h-64 rounded-xl shimmer flex items-center justify-center">
-              <p className="text-white/20 text-xs">Loading routine...</p>
+              <p className="text-white/30 text-xs font-display">Loading routine...</p>
             </div>
           )}
 
-          {/* Image */}
           {!hasError && (
             <img
-              src={routine.direct}
-              alt={`${activeGroup} exam routine`}
-              className={`w-full rounded-xl object-contain cursor-zoom-in transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0 absolute'}`}
+              key={activeGroup}
+              src={url}
+              alt={`${activeGroup} routine`}
+              className={`w-full rounded-xl object-contain cursor-zoom-in transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0 h-0'}`}
               onClick={() => setZoomed(true)}
               onLoad={() => setImgLoaded(p => ({ ...p, [activeGroup]: true }))}
               onError={() => setImgError(p => ({ ...p, [activeGroup]: true }))}
             />
           )}
 
-          {/* Zoom button */}
           {isLoaded && !hasError && (
-            <button onClick={() => setZoomed(true)}
-              className="absolute top-7 right-7 bg-black/60 backdrop-blur-sm rounded-lg p-2 text-white/70 hover:text-white">
-              <ZoomIn size={16} />
-            </button>
+            <>
+              <button onClick={() => setZoomed(true)}
+                className="absolute top-7 right-7 bg-black/60 backdrop-blur-sm rounded-lg p-2 text-white/70">
+                <ZoomIn size={16} />
+              </button>
+              <p className="text-white/20 text-[10px] text-center mt-2 font-display">
+                {isBn ? 'ট্যাপ করো জুম করতে' : 'Tap to zoom'}
+              </p>
+            </>
           )}
 
-          {/* Error fallback */}
           {hasError && (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex flex-col items-center py-12 text-center">
               <div className="text-5xl mb-4">📋</div>
-              <p className={`text-white/60 text-sm mb-2 ${isBn ? 'font-bengali' : ''}`}>
-                {isBn ? 'ছবি সরাসরি লোড হচ্ছে না' : "Image couldn't load directly"}
+              <p className="text-white/40 text-sm mb-1">
+                {isBn ? 'ছবি লোড হয়নি' : 'Image failed to load'}
               </p>
-              <p className={`text-white/30 text-xs mb-5 ${isBn ? 'font-bengali' : ''}`}>
-                {isBn ? 'নিচের বাটনে ট্যাপ করে দেখো' : 'Tap below to view in browser'}
-              </p>
-              <a href={routine.page} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2 btn-primary text-sm py-2.5 px-6">
-                <ExternalLink size={14} />
-                <span className={isBn ? 'font-bengali' : ''}>{isBn ? 'রুটিন দেখো' : 'View Routine'}</span>
-              </a>
+              <p className="text-white/20 text-xs">{url}</p>
             </div>
-          )}
-
-          {isLoaded && !hasError && (
-            <p className="text-white/20 text-[10px] text-center mt-2 font-display">
-              {isBn ? 'ছবিতে ট্যাপ করো জুম করতে' : 'Tap image to zoom'}
-            </p>
           )}
         </div>
 
-        {/* Open in browser option */}
-        {!hasError && (
-          <a href={routine.page} target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 mt-3 text-white/30 hover:text-white/60 text-xs font-display transition-colors">
-            <ExternalLink size={11} />
-            {isBn ? 'ব্রাউজারে খোলো' : 'Open in browser'}
-          </a>
-        )}
-
         <div className="mt-4 p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl">
           <p className={`text-brand-300 text-xs leading-relaxed ${isBn ? 'font-bengali' : ''}`}>
-            📅 {isBn
-              ? 'এইচএসসি পরীক্ষা শুরু: ০২ জুলাই ২০২৬ — প্রতিটি বিষয় মনোযোগ দিয়ে পড়ো!'
-              : 'HSC Exam starts: 02 July 2026 — Study every subject carefully!'}
+            📅 {isBn ? 'এইচএসসি পরীক্ষা শুরু: ০২ জুলাই ২০২৬' : 'HSC Exam starts: 02 July 2026'}
           </p>
         </div>
         <div className="h-4" />
       </div>
 
-      {/* Zoom modal */}
       {zoomed && !hasError && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-2 overflow-auto"
           onClick={() => setZoomed(false)}>
@@ -142,8 +114,7 @@ export default function Routine() {
             onClick={() => setZoomed(false)}>
             <X size={20} />
           </button>
-          <img src={routine.direct} alt="routine zoomed"
-            className="max-w-full object-contain rounded-xl"
+          <img src={url} alt="zoomed" className="max-w-full object-contain rounded-xl"
             onClick={e => e.stopPropagation()} />
         </div>
       )}

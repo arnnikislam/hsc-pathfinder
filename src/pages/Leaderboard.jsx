@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { useAuth } from '../contexts/AuthContext'
 import { useTranslation } from 'react-i18next'
@@ -11,87 +11,82 @@ const TABS   = ['today','this_week','this_month','all_time']
 const GROUPS = ['all_groups','science','arts','commerce']
 
 function RankIcon({ rank }) {
-  if (rank === 1) return <Crown  size={16} className="text-yellow-400" />
-  if (rank === 2) return <Medal  size={16} className="text-gray-300"   />
-  if (rank === 3) return <Medal  size={16} className="text-amber-600"  />
-  return <span className="text-white/40 font-display text-sm w-4 text-center">{rank}</span>
+  if (rank===1) return <Crown  size={16} className="text-yellow-400"/>
+  if (rank===2) return <Medal  size={16} className="text-gray-300"/>
+  if (rank===3) return <Medal  size={16} className="text-amber-600"/>
+  return <span className="text-white/40 text-sm w-4 text-center inline-block">{rank}</span>
 }
 
 function fmtMin(m) {
-  const h = Math.floor(m/60), min = m%60
-  if (h > 0 && min > 0) return `${h}h ${min}m`
-  if (h > 0) return `${h}h`
+  const h=Math.floor(m/60), min=m%60
+  if (h>0&&min>0) return `${h}h ${min}m`
+  if (h>0) return `${h}h`
   return `${min}m`
 }
 
 export default function Leaderboard() {
-  const { user } = useAuth()
-  const { t, i18n } = useTranslation()
-  const isBn = i18n.language === 'bn'
+  const { user }   = useAuth()
+  const { t, i18n} = useTranslation()
+  const isBn       = i18n.language==='bn'
 
   const [activeTab,   setActiveTab]   = useState('today')
   const [activeGroup, setActiveGroup] = useState('all_groups')
   const [entries,     setEntries]     = useState([])
   const [loading,     setLoading]     = useState(true)
-  const [error,       setError]       = useState(null)
+  const [errMsg,      setErrMsg]      = useState('')
 
   useEffect(() => { fetchLeaderboard() }, [activeTab, activeGroup])
 
   const getDateFrom = () => {
     const now = new Date()
-    if (activeTab === 'today')      return format(startOfDay(now),                          'yyyy-MM-dd')
-    if (activeTab === 'this_week')  return format(startOfWeek(now, { weekStartsOn: 6 }),    'yyyy-MM-dd')
-    if (activeTab === 'this_month') return format(startOfMonth(now),                        'yyyy-MM-dd')
-    return '2025-01-01' // all time
+    if (activeTab==='today')      return format(startOfDay(now),                        'yyyy-MM-dd')
+    if (activeTab==='this_week')  return format(startOfWeek(now,{weekStartsOn:6}),      'yyyy-MM-dd')
+    if (activeTab==='this_month') return format(startOfMonth(now),                      'yyyy-MM-dd')
+    return '2025-01-01'
   }
 
   const fetchLeaderboard = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setErrMsg('')
     try {
       const dateFrom = getDateFrom()
 
-      // Step 1: fetch logs from dateFrom
-      const logsQ = query(
+      // Fetch logs — simple query, no orderBy = no index needed
+      const logsSnap = await getDocs(query(
         collection(db, 'studyLogs'),
         where('date', '>=', dateFrom)
-      )
-      const logsSnap = await getDocs(logsQ)
+      ))
 
-      if (logsSnap.empty) { setEntries([]); setLoading(false); return }
+      if (logsSnap.empty) { setEntries([]); return }
 
-      // Step 2: aggregate minutes per user
-      const userMinutes = {}
+      // Aggregate minutes per userId
+      const userMins = {}
       logsSnap.docs.forEach(d => {
         const { userId, minutes } = d.data()
-        if (!userId || !minutes) return
-        userMinutes[userId] = (userMinutes[userId] || 0) + minutes
+        if (userId && minutes>0) userMins[userId] = (userMins[userId]||0) + minutes
       })
 
-      if (Object.keys(userMinutes).length === 0) { setEntries([]); setLoading(false); return }
+      if (!Object.keys(userMins).length) { setEntries([]); return }
 
-      // Step 3: fetch all user profiles
+      // Fetch all profiles
       const usersSnap = await getDocs(collection(db, 'users'))
-      const usersMap = {}
+      const usersMap  = {}
       usersSnap.docs.forEach(d => { usersMap[d.id] = d.data() })
 
-      // Step 4: build board
-      let board = Object.entries(userMinutes)
+      // Build board
+      let board = Object.entries(userMins)
         .map(([uid, minutes]) => ({ uid, minutes, ...usersMap[uid] }))
-        .filter(e => e.name) // only users who completed onboarding
+        .filter(e => e.name) // only completed profiles
 
-      // Step 5: group filter
+      // Group filter
       if (activeGroup !== 'all_groups') {
         board = board.filter(e => e.group === activeGroup)
       }
 
-      // Step 6: sort desc
-      board.sort((a, b) => b.minutes - a.minutes)
-
+      board.sort((a,b) => b.minutes - a.minutes)
       setEntries(board.slice(0, 50))
     } catch (err) {
-      console.error('Leaderboard error:', err)
-      setError(err.message)
+      console.error('Leaderboard:', err)
+      setErrMsg(err.message || 'Failed to load')
     } finally {
       setLoading(false)
     }
@@ -104,20 +99,19 @@ export default function Leaderboard() {
       <div className="page-container pt-6">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-5 pr-16">
+        <div className="flex items-center justify-between mb-5 pr-14">
           <div>
             <div className="flex items-center gap-2 mb-0.5">
-              <Trophy size={20} className="text-yellow-400" />
-              <h1 className={`text-xl font-display font-bold text-white ${isBn ? 'font-bengali' : ''}`}>
+              <Trophy size={20} className="text-yellow-400"/>
+              <h1 className={`text-xl font-display font-bold text-white ${isBn?'font-bengali':''}`}>
                 {t('leaderboard.title')}
               </h1>
             </div>
-            <p className={`text-white/40 text-xs ${isBn ? 'font-bengali' : ''}`}>
-              {t('leaderboard.subtitle')}
-            </p>
+            <p className={`text-white/40 text-xs ${isBn?'font-bengali':''}`}>{t('leaderboard.subtitle')}</p>
           </div>
-          <button onClick={fetchLeaderboard} className="text-white/30 hover:text-white transition-colors">
-            <RefreshCw size={16} />
+          <button onClick={fetchLeaderboard}
+            className="text-white/30 hover:text-white transition-colors p-2 active:scale-90">
+            <RefreshCw size={16}/>
           </button>
         </div>
 
@@ -125,10 +119,10 @@ export default function Leaderboard() {
         <div className="flex gap-1 mb-3 bg-surface-800 p-1 rounded-xl">
           {TABS.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2 rounded-lg text-[10px] font-display font-semibold transition-all duration-200 ${
-                activeTab === tab ? 'bg-brand-500 text-white shadow-lg' : 'text-white/40 hover:text-white/70'
+              className={`flex-1 py-2 rounded-lg text-[10px] font-display font-semibold transition-all ${
+                activeTab===tab ? 'bg-brand-500 text-white shadow-lg' : 'text-white/40 hover:text-white/60'
               }`}>
-              <span className={isBn ? 'font-bengali' : ''}>{t(`leaderboard.${tab}`)}</span>
+              <span className={isBn?'font-bengali':''}>{t(`leaderboard.${tab}`)}</span>
             </button>
           ))}
         </div>
@@ -138,62 +132,65 @@ export default function Leaderboard() {
           {GROUPS.map(g => (
             <button key={g} onClick={() => setActiveGroup(g)}
               className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-display font-medium transition-all border ${
-                activeGroup === g ? 'bg-accent-500 border-accent-400 text-white' : 'bg-surface-700 border-white/10 text-white/50 hover:text-white'
+                activeGroup===g ? 'bg-accent-500 border-accent-400 text-white' : 'bg-surface-700 border-white/10 text-white/50'
               }`}>
-              <span className={isBn ? 'font-bengali' : ''}>{t(`leaderboard.${g}`)}</span>
+              <span className={isBn?'font-bengali':''}>{t(`leaderboard.${g}`)}</span>
             </button>
           ))}
         </div>
 
-        {/* Error state */}
-        {error && (
-          <div className="card bg-red-500/10 border border-red-500/20 mb-4">
-            <p className="text-red-400 text-xs text-center">Error: {error}</p>
-            <p className="text-white/30 text-[10px] text-center mt-1">Check Firestore indexes in Firebase Console</p>
+        {/* Error */}
+        {errMsg && (
+          <div className="card bg-red-500/10 border-red-500/20 mb-4">
+            <p className="text-red-400 text-xs font-display text-center">{errMsg}</p>
+            <p className="text-white/30 text-[10px] text-center mt-1">
+              Make sure Firestore rules allow reading studyLogs
+            </p>
           </div>
         )}
 
         {/* List */}
         {loading ? (
           <div className="space-y-3">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-16 rounded-2xl shimmer" />)}
+            {[1,2,3,4,5].map(i => <div key={i} className="h-16 rounded-2xl shimmer"/>)}
           </div>
-        ) : entries.length === 0 ? (
+        ) : entries.length===0 && !errMsg ? (
           <div className="text-center py-16">
-            <Trophy size={40} className="text-white/10 mx-auto mb-3" />
-            <p className={`text-white/30 text-sm ${isBn ? 'font-bengali' : ''}`}>{t('leaderboard.empty')}</p>
-            <p className="text-white/20 text-xs mt-1">
-              {isBn ? 'প্রথমে পড়া লগ করো!' : 'Log some study time first!'}
+            <Trophy size={44} className="text-white/10 mx-auto mb-3"/>
+            <p className={`text-white/30 text-sm ${isBn?'font-bengali':''}`}>{t('leaderboard.empty')}</p>
+            <p className="text-white/20 text-xs mt-1 font-display">
+              {isBn ? 'প্রথমে পড়া লগ করো!' : 'Log some study time to appear here!'}
             </p>
           </div>
         ) : (
           <div className="space-y-2">
             {entries.map((entry, idx) => {
-              const rank = idx + 1
+              const rank = idx+1
               const isMe = entry.uid === user?.uid
               return (
                 <div key={entry.uid}
-                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 border transition-all ${
+                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 border ${
                     isMe ? 'bg-brand-500/10 border-brand-500/30' :
-                    rank <= 3 ? 'bg-surface-700 border-white/10' : 'bg-surface-800 border-white/5'
+                    rank<=3 ? 'bg-surface-700 border-white/10' :
+                    'bg-surface-800 border-white/5'
                   }`}>
                   <div className="w-5 flex justify-center flex-shrink-0">
-                    <RankIcon rank={rank} />
+                    <RankIcon rank={rank}/>
                   </div>
                   <img
                     src={entry.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=0ea5e9&color=fff&size=40`}
                     alt={entry.name}
-                    className={`w-10 h-10 rounded-full flex-shrink-0 border-2 ${
+                    className={`w-10 h-10 rounded-full flex-shrink-0 border-2 object-cover ${
                       rank===1?'border-yellow-400':rank===2?'border-gray-300':rank===3?'border-amber-600':'border-white/10'
                     }`}
-                    onError={e => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=0ea5e9&color=fff&size=40` }}
+                    onError={e => { e.target.src=`https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=0ea5e9&color=fff&size=40` }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className={`text-sm font-display font-semibold truncate ${isMe ? 'text-brand-300' : 'text-white'}`}>
-                        {entry.name}{isMe ? ' (You)' : ''}
+                    <div className="flex items-center gap-1">
+                      <p className={`text-sm font-display font-semibold truncate ${isMe?'text-brand-300':'text-white'}`}>
+                        {entry.name}{isMe?' (You)':''}
                       </p>
-                      <span className="text-xs flex-shrink-0">{groupIcon[entry.group] || ''}</span>
+                      <span className="text-xs flex-shrink-0">{groupIcon[entry.group]||''}</span>
                     </div>
                     <p className="text-[10px] text-white/40 truncate">{entry.college}</p>
                   </div>
@@ -201,16 +198,16 @@ export default function Leaderboard() {
                     <p className={`font-display font-bold text-sm ${
                       rank===1?'text-yellow-400':rank===2?'text-gray-300':rank===3?'text-amber-500':'text-brand-400'
                     }`}>{fmtMin(entry.minutes)}</p>
-                    <p className="text-[9px] text-white/30 font-display">{t('leaderboard.hours')}</p>
+                    <p className="text-[9px] text-white/30">{t('leaderboard.hours')}</p>
                   </div>
                 </div>
               )
             })}
           </div>
         )}
-        <div className="h-4" />
+        <div className="h-4"/>
       </div>
-      <BottomNav />
+      <BottomNav/>
     </div>
   )
 }
