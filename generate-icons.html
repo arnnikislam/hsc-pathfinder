@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate PWA Icons</title></head>
+<body>
+<h2>HSC PathFinder — PWA Icon Generator</h2>
+<p>Open this file in a browser and click the button to download all icons.</p>
+<button onclick="generateAll()">Generate & Download All Icons</button>
+<div id="log"></div>
+<script>
+const SIZES = [72, 96, 128, 144, 152, 192, 384, 512]
+
+function drawIcon(size) {
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const ctx = canvas.getContext('2d')
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, size, size)
+  grad.addColorStop(0, '#0ea5e9')
+  grad.addColorStop(1, '#f97316')
+
+  // Rounded rect background
+  const r = size * 0.2
+  ctx.beginPath()
+  ctx.moveTo(r, 0)
+  ctx.lineTo(size - r, 0)
+  ctx.quadraticCurveTo(size, 0, size, r)
+  ctx.lineTo(size, size - r)
+  ctx.quadraticCurveTo(size, size, size - r, size)
+  ctx.lineTo(r, size)
+  ctx.quadraticCurveTo(0, size, 0, size - r)
+  ctx.lineTo(0, r)
+  ctx.quadraticCurveTo(0, 0, r, 0)
+  ctx.closePath()
+  ctx.fillStyle = grad
+  ctx.fill()
+
+  // Draw triangle (path symbol)
+  const s = size
+  ctx.strokeStyle = 'white'
+  ctx.lineWidth = s * 0.06
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  ctx.beginPath()
+  ctx.moveTo(s*0.25, s*0.7)
+  ctx.lineTo(s*0.5, s*0.2)
+  ctx.lineTo(s*0.75, s*0.7)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.moveTo(s*0.35, s*0.7)
+  ctx.lineTo(s*0.65, s*0.7)
+  ctx.stroke()
+
+  // Center dot
+  ctx.beginPath()
+  ctx.arc(s*0.5, s*0.5, s*0.07, 0, Math.PI*2)
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'
+  ctx.fill()
+
+  return canvas
+}
+
+function generateAll() {
+  const log = document.getElementById('log')
+  SIZES.forEach(size => {
+    const canvas = drawIcon(size)
+    const link = document.createElement('a')
+    link.download = `icon-${size}x${size}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+    log.innerHTML += `<p>✅ Generated icon-${size}x${size}.png</p>`
+  })
+}
+</script>
+</body>
+</html>

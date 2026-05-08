@@ -1,20 +1,10 @@
-// ─────────────────────────────────────────────────────────────
-// Email Reminders via EmailJS (free tier — 200 emails/month)
-// Setup guide:
-//   1. Create account at https://emailjs.com
-//   2. Add a Gmail service → copy Service ID
-//   3. Create a template with variables below → copy Template ID
-//   4. Copy your Public Key from Account → API Keys
-//   5. Replace the three constants below
-// ─────────────────────────────────────────────────────────────
+import { init, send } from '@emailjs/browser'
 
-const SERVICE_ID  = 'YOUR_SERVICE_ID'   // e.g. 'service_abc123'
-const TEMPLATE_ID = 'YOUR_TEMPLATE_ID'  // e.g. 'template_xyz789'
-const PUBLIC_KEY  = 'YOUR_PUBLIC_KEY'   // e.g. 'AbCdEfGhIjKlMnOp'
+const SERVICE_ID  = 'service_7jciy19'
+const TEMPLATE_ID = 'template_afiithm'
+const PUBLIC_KEY  = 'yUQ2uNvtu1OEbcXGv'
 
-// Template variables to use in EmailJS:
-// {{to_name}}  {{to_email}}  {{studied_time}}  {{remaining_time}}
-// {{motivation_en}}  {{motivation_bn}}  {{app_url}}
+init(PUBLIC_KEY)
 
 const MOTIVATIONS_EN = [
   "Every minute of study now saves hours of regret later. Keep going! 💪",
@@ -33,42 +23,50 @@ const MOTIVATIONS_BN = [
 ]
 
 function fmtMin(m) {
-  const h=Math.floor(m/60), min=m%60
-  if (h>0&&min>0) return `${h}h ${min}m`
-  if (h>0) return `${h}h`
+  const h = Math.floor(m / 60), min = m % 60
+  if (h > 0 && min > 0) return `${h}h ${min}m`
+  if (h > 0) return `${h}h`
   return `${min}m`
 }
 
 export async function sendStudyReminder({ name, email, studiedMinutes, goalMinutes }) {
-  if (!email) return false
+  if (!email) { console.warn('No email'); return false }
+
   const idx = Math.floor(Math.random() * 5)
-  const params = {
-    to_name:        name,
-    to_email:       email,
+
+  // Match exactly what your EmailJS template uses:
+  // {{name}} and {{email}} in the Content tab
+  // "To Email" field must be changed to {{to_email}} in your template
+  const templateParams = {
+    name:           name || 'Student',     // matches {{name}} — From Name field
+    email:          email,                 // matches {{email}} — Reply To field
+    to_email:       email,                 // for To Email field (see instructions below)
+    to_name:        name || 'Student',
     studied_time:   fmtMin(studiedMinutes),
     remaining_time: fmtMin(Math.max(0, goalMinutes - studiedMinutes)),
+    goal_time:      fmtMin(goalMinutes),
     motivation_en:  MOTIVATIONS_EN[idx],
     motivation_bn:  MOTIVATIONS_BN[idx],
     app_url:        'https://hsc-pathfinder.vercel.app',
   }
+
   try {
-    const emailjs = await import('@emailjs/browser')
-    await emailjs.send(SERVICE_ID, TEMPLATE_ID, params, PUBLIC_KEY)
-    console.log('Reminder sent to', email)
+    const res = await send(SERVICE_ID, TEMPLATE_ID, templateParams)
+    console.log('Email sent:', res.status, 'to', email)
     return true
   } catch (err) {
-    console.error('Email failed:', err)
+    console.error('EmailJS failed:', err)
     return false
   }
 }
 
-// Call this once when app loads — schedules a daily check at 10 PM
 export function scheduleDailyReminder(callback) {
   const now    = new Date()
   const target = new Date()
   target.setHours(22, 0, 0, 0)
   if (now >= target) target.setDate(target.getDate() + 1)
   const msUntil = target - now
+  console.log(`Next email reminder in ${Math.round(msUntil / 1000 / 60)} minutes`)
   setTimeout(() => {
     callback()
     setInterval(callback, 24 * 60 * 60 * 1000)

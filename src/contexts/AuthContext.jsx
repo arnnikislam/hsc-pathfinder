@@ -14,14 +14,11 @@ export function AuthProvider({ children }) {
     try {
       const snap = await getDoc(doc(db, 'users', uid))
       if (snap.exists()) {
-        const data = snap.data()
-        // Prefer Firestore photoURL (custom upload) over Google photo
-        setProfile(data)
-        return data
-      } else {
-        setProfile(null)
-        return null
+        setProfile(snap.data())
+        return snap.data()
       }
+      setProfile(null)
+      return null
     } catch (err) {
       console.error('loadProfile:', err)
       setProfile(null)
@@ -32,11 +29,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser)
-      if (firebaseUser) {
-        await loadProfile(firebaseUser.uid)
-      } else {
-        setProfile(null)
-      }
+      if (firebaseUser) await loadProfile(firebaseUser.uid)
+      else setProfile(null)
       setLoading(false)
     })
     return unsub
@@ -48,12 +42,15 @@ export function AuthProvider({ children }) {
     await loadProfile(uid)
   }
 
-  // Get the best available photo URL
-  // Priority: Firestore custom upload > Firebase Auth > UI Avatars fallback
+  // Best available photo:
+  // 1. Firestore base64 (custom upload) — starts with 'data:'
+  // 2. Firebase Auth photoURL (Google)
+  // 3. UI Avatars fallback
   const getPhotoURL = (name) => {
-    if (profile?.photoURL) return profile.photoURL
+    if (profile?.photoURL?.startsWith('data:')) return profile.photoURL
+    if (profile?.photoURL && profile.photoURL.startsWith('http')) return profile.photoURL
     if (auth.currentUser?.photoURL) return auth.currentUser.photoURL
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name||'User')}&background=0ea5e9&color=fff&size=160`
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=0ea5e9&color=fff&size=160`
   }
 
   return (

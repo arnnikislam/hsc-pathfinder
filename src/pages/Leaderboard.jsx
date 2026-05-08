@@ -196,7 +196,7 @@ export default function Leaderboard() {
 
                   {/* Avatar */}
                   <img
-                    src={entry.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=0ea5e9&color=fff&size=40`}
+                    src={entry.photoURL && entry.photoURL.length < 500 ? entry.photoURL : (entry.photoURL?.startsWith("data:") ? entry.photoURL : `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.name)}&background=0ea5e9&color=fff&size=40`)}
                     alt={entry.name}
                     className={`w-11 h-11 rounded-full flex-shrink-0 border-2 object-cover ${
                       rank===1?'border-yellow-400':rank===2?'border-gray-300':rank===3?'border-amber-600':'border-white/10'
