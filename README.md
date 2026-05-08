@@ -205,3 +205,15 @@ Built with ❤️ for HSC 2026 candidates of Bangladesh
 ⭐ Star this repo if it helps you!
 
 </div>
+
+## 📸 Custom Profile Photos
+
+Users can upload and crop their own profile photos:
+- Tap the camera icon on the Account page
+- Select a photo from phone gallery
+- Crop to a perfect circle with zoom & rotate controls
+- Photo stored in Firebase Storage (free tier)
+- Shows everywhere: dashboard, leaderboard, account
+
+### Firebase Storage Setup
+Paste `storage.rules` content in Firebase Console → Storage → Rules → Publish

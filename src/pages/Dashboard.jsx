@@ -56,7 +56,7 @@ async function recalcStats(uid) {
 }
 
 export default function Dashboard() {
-  const { user, profile, refreshProfile } = useAuth()
+  const { user, profile, refreshProfile, getPhotoURL } = useAuth()
   const { t, i18n } = useTranslation()
   const isBn = i18n.language === 'bn'
 
@@ -168,7 +168,7 @@ export default function Dashboard() {
             </h1>
           </div>
           <img
-            src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.name||'U')}&background=0ea5e9&color=fff`}
+            src={getPhotoURL(profile?.name)}
             alt="avatar" className="w-10 h-10 rounded-full border-2 border-brand-500/50 flex-shrink-0 object-cover"
             onError={e=>{ e.target.src=`https://ui-avatars.com/api/?name=User&background=0ea5e9&color=fff` }}
           />
