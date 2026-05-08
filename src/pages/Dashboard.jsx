@@ -9,6 +9,7 @@ import BottomNav from '../components/BottomNav'
 import toast from 'react-hot-toast'
 import { Plus, Clock, Flame, TrendingUp, CalendarDays, Trash2 } from 'lucide-react'
 import { calculateAndSaveStreak } from '../utils/streakUtils'
+import StudyGraph from '../components/StudyGraph'
 
 function ProgressRing({ percent, size = 110, stroke = 9 }) {
   const capped = Math.min(percent, 100)
@@ -284,6 +285,9 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* Study Graph */}
+        <StudyGraph uid={user?.uid} goalMinutes={goalMinutes} />
 
         {/* Honesty note */}
         <div className="p-3 bg-accent-500/5 border border-accent-500/15 rounded-xl mb-6">
