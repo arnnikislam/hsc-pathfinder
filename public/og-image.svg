@@ -1,0 +1,76 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0a0f1e"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="600" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+    <linearGradient id="logo" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Top accent bar -->
+  <rect width="1200" height="5" fill="url(#title)"/>
+
+  <!-- Logo circle -->
+  <rect x="544" y="60" width="112" height="112" rx="28" fill="url(#logo)" opacity="0.95"/>
+  <filter id="gf"><feGaussianBlur stdDeviation="8"/></filter>
+  <rect x="544" y="60" width="112" height="112" rx="28" fill="url(#logo)" opacity="0.3" filter="url(#gf)"/>
+  <!-- Logo icon -->
+  <g transform="translate(544,60)">
+    <path d="M28 78 L56 28 L84 78" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M38 78 L74 78" stroke="white" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="56" cy="56" r="8" fill="white" opacity="0.9"/>
+  </g>
+
+  <!-- App name -->
+  <text x="600" y="230" text-anchor="middle" font-family="Arial,sans-serif" font-size="72" font-weight="800" fill="url(#title)">HSC PathFinder</text>
+
+  <!-- Tagline -->
+  <text x="600" y="278" text-anchor="middle" font-family="Arial,sans-serif" font-size="26" fill="rgba(255,255,255,0.5)">তোমার লক্ষ্য, তোমার পথ  •  Your Goal, Your Path</text>
+
+  <!-- Feature chips -->
+  <g transform="translate(210,320)">
+    <rect width="150" height="44" rx="22" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <text x="75" y="27" text-anchor="middle" font-family="Arial" font-size="18" fill="rgba(255,255,255,0.7)">📊 Study Tracker</text>
+  </g>
+  <g transform="translate(376,320)">
+    <rect width="140" height="44" rx="22" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <text x="70" y="27" text-anchor="middle" font-family="Arial" font-size="18" fill="rgba(255,255,255,0.7)">🏆 Leaderboard</text>
+  </g>
+  <g transform="translate(532,320)">
+    <rect width="140" height="44" rx="22" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <text x="70" y="27" text-anchor="middle" font-family="Arial" font-size="18" fill="rgba(255,255,255,0.7)">📅 Exam Routine</text>
+  </g>
+  <g transform="translate(688,320)">
+    <rect width="130" height="44" rx="22" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <text x="65" y="27" text-anchor="middle" font-family="Arial" font-size="18" fill="rgba(255,255,255,0.7)">📄 PDF Report</text>
+  </g>
+  <g transform="translate(834,320)">
+    <rect width="110" height="44" rx="22" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <text x="55" y="27" text-anchor="middle" font-family="Arial" font-size="18" fill="rgba(255,255,255,0.7)">📱 PWA App</text>
+  </g>
+
+  <!-- Badge -->
+  <rect x="360" y="400" width="480" height="56" rx="28" fill="rgba(249,115,22,0.2)" stroke="rgba(249,115,22,0.4)" stroke-width="1.5"/>
+  <text x="600" y="434" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700" fill="#fb923c">🎓 HSC 2026 — Free for All Candidates</text>
+
+  <!-- URL -->
+  <text x="600" y="510" text-anchor="middle" font-family="Arial" font-size="20" fill="rgba(14,165,233,0.5)">hsc-pathfinder.vercel.app</text>
+
+  <!-- Bottom bar -->
+  <rect y="625" width="1200" height="5" fill="url(#title)"/>
+</svg>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    width:1200px; height:630px; overflow:hidden;
+    font-family:'Segoe UI',Arial,sans-serif;
+    background: linear-gradient(135deg, #0a0f1e 0%, #0f172a 50%, #0a1628 100%);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .bg-glow {
+    position:absolute; top:-100px; left:50%; transform:translateX(-50%);
+    width:800px; height:400px;
+    background: radial-gradient(ellipse, rgba(14,165,233,0.25) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .container {
+    position:relative; z-index:1; text-align:center; padding:60px;
+  }
+  .logo {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:80px; height:80px;
+    background: linear-gradient(135deg,#0ea5e9,#f97316);
+    border-radius:24px; margin-bottom:28px;
+    box-shadow: 0 0 40px rgba(14,165,233,0.4);
+  }
+  .logo svg { width:50px; height:50px; }
+  h1 {
+    font-size:64px; font-weight:800; color:#fff; letter-spacing:-1px;
+    background: linear-gradient(135deg,#0ea5e9,#f97316);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    margin-bottom:12px;
+  }
+  .tagline { font-size:28px; color:rgba(255,255,255,0.5); margin-bottom:40px; }
+  .features {
+    display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:40px;
+  }
+  .chip {
+    background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
+    color:rgba(255,255,255,0.7); font-size:18px;
+    padding:10px 20px; border-radius:50px;
+  }
+  .badge {
+    display:inline-block;
+    background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4);
+    color:#fb923c; font-size:20px; font-weight:700;
+    padding:12px 28px; border-radius:50px;
+  }
+  .url { margin-top:20px; color:rgba(14,165,233,0.5); font-size:16px; }
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="container">
+  <div class="logo">
+    <svg viewBox="0 0 100 100" fill="none">
+      <path d="M25 65 L50 25 L75 65" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M35 65 L65 65" stroke="white" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="50" cy="50" r="8" fill="white" opacity="0.9"/>
+    </svg>
+  </div>
+  <h1>HSC PathFinder</h1>
+  <p class="tagline">তোমার লক্ষ্য, তোমার পথ &nbsp;•&nbsp; Your Goal, Your Path</p>
+  <div class="features">
+    <span class="chip">📊 Study Tracker</span>
+    <span class="chip">🏆 Leaderboard</span>
+    <span class="chip">📅 Exam Routine</span>
+    <span class="chip">📄 PDF Report</span>
+    <span class="chip">📱 PWA App</span>
+  </div>
+  <div class="badge">🎓 HSC 2026 — Free for All Candidates</div>
+  <p class="url">hsc-pathfinder.vercel.app</p>
+</div>
+</body>
+</html>

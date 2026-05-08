@@ -4,17 +4,17 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useTranslation } from 'react-i18next'
 import './i18n'
 
-import Login              from './pages/Login'
-import Onboarding         from './pages/Onboarding'
-import Dashboard          from './pages/Dashboard'
-import Leaderboard        from './pages/Leaderboard'
-import Routine            from './pages/Routine'
-import Account            from './pages/Account'
-import Developer          from './pages/Developer'
-import PWAInstallBanner   from './components/PWAInstallBanner'
+import Login               from './pages/Login'
+import Onboarding          from './pages/Onboarding'
+import Dashboard           from './pages/Dashboard'
+import Leaderboard         from './pages/Leaderboard'
+import Routine             from './pages/Routine'
+import Account             from './pages/Account'
+import Developer           from './pages/Developer'
+import PWAInstallBanner    from './components/PWAInstallBanner'
 import NotificationManager from './components/NotificationManager'
+import CommitmentModal     from './components/CommitmentModal'
 
-// Language toggle — small, fixed, non-intrusive
 function LangToggle() {
   const { i18n } = useTranslation()
   const toggle = () => {
@@ -34,7 +34,6 @@ function Loading() {
   return (
     <div className="min-h-screen bg-surface-900 flex items-center justify-center">
       <div className="text-center">
-        {/* Logo */}
         <div className="w-16 h-16 mx-auto mb-4 animate-float">
           <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="50" cy="50" r="48" fill="url(#lg)"/>
@@ -57,36 +56,43 @@ function Loading() {
 
 function ProtectedRoute({ children }) {
   const { user, profile, loading } = useAuth()
-  if (loading) return <Loading />
-  if (!user)    return <Navigate to="/login"      replace />
-  if (!profile) return <Navigate to="/onboarding" replace />
+  if (loading) return <Loading/>
+  if (!user)   return <Navigate to="/login"      replace/>
+  if (!profile)return <Navigate to="/onboarding" replace/>
   return <>{children}</>
 }
 
 function AppRoutes() {
   const { user, profile, loading } = useAuth()
-  if (loading) return <Loading />
+  if (loading) return <Loading/>
+
+  const isProtected = user && profile
 
   return (
     <>
-      <LangToggle />
-      <NotificationManager />
-      <PWAInstallBanner />
+      <LangToggle/>
+      {isProtected && (
+        <>
+          <NotificationManager/>
+          <PWAInstallBanner/>
+          <CommitmentModal/>
+        </>
+      )}
       <Routes>
         <Route path="/login" element={
-          user && profile ? <Navigate to="/dashboard" replace /> : <Login />
-        } />
+          user && profile ? <Navigate to="/dashboard" replace/> : <Login/>
+        }/>
         <Route path="/onboarding" element={
-          !user   ? <Navigate to="/login"     replace /> :
-          profile ? <Navigate to="/dashboard" replace /> :
-          <Onboarding />
-        } />
-        <Route path="/dashboard"   element={<ProtectedRoute><Dashboard   /></ProtectedRoute>} />
-        <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-        <Route path="/routine"     element={<ProtectedRoute><Routine     /></ProtectedRoute>} />
-        <Route path="/account"     element={<ProtectedRoute><Account     /></ProtectedRoute>} />
-        <Route path="/developer"   element={<ProtectedRoute><Developer   /></ProtectedRoute>} />
-        <Route path="*"            element={<Navigate to="/dashboard"    replace />} />
+          !user    ? <Navigate to="/login"     replace/> :
+          profile  ? <Navigate to="/dashboard" replace/> :
+          <Onboarding/>
+        }/>
+        <Route path="/dashboard"   element={<ProtectedRoute><Dashboard  /></ProtectedRoute>}/>
+        <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard/></ProtectedRoute>}/>
+        <Route path="/routine"     element={<ProtectedRoute><Routine    /></ProtectedRoute>}/>
+        <Route path="/account"     element={<ProtectedRoute><Account    /></ProtectedRoute>}/>
+        <Route path="/developer"   element={<ProtectedRoute><Developer  /></ProtectedRoute>}/>
+        <Route path="*"            element={<Navigate to="/dashboard"   replace/>}/>
       </Routes>
     </>
   )
@@ -96,24 +102,18 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <AppRoutes />
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background:   '#1e293b',
-              color:        '#fff',
-              border:       '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '12px',
-              fontSize:     '13px',
-              fontFamily:   'Sora, sans-serif',
-              maxWidth:     '320px',
-            },
-            success: { iconTheme: { primary:'#22c55e', secondary:'#fff' } },
-            error:   { iconTheme: { primary:'#ef4444', secondary:'#fff' } },
-          }}
-        />
+        <AppRoutes/>
+        <Toaster position="top-center" toastOptions={{
+          duration: 3000,
+          style: {
+            background:'#1e293b', color:'#fff',
+            border:'1px solid rgba(255,255,255,0.1)',
+            borderRadius:'12px', fontSize:'13px',
+            fontFamily:'Sora, sans-serif', maxWidth:'320px',
+          },
+          success:{ iconTheme:{ primary:'#22c55e', secondary:'#fff' } },
+          error:  { iconTheme:{ primary:'#ef4444', secondary:'#fff' } },
+        }}/>
       </BrowserRouter>
     </AuthProvider>
   )
