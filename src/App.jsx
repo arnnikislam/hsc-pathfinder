@@ -11,9 +11,12 @@ import Leaderboard         from './pages/Leaderboard'
 import Routine             from './pages/Routine'
 import Account             from './pages/Account'
 import Developer           from './pages/Developer'
+import Admin               from './pages/Admin'
 import PWAInstallBanner    from './components/PWAInstallBanner'
 import NotificationManager from './components/NotificationManager'
 import CommitmentModal     from './components/CommitmentModal'
+
+const ADMIN_UID = '9vzlZq07o4MCRMm50zdTnYwFSLI2'
 
 function LangToggle() {
   const { i18n } = useTranslation()
@@ -27,6 +30,32 @@ function LangToggle() {
       className="fixed top-3 right-3 z-50 bg-surface-700/90 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white text-[11px] font-display px-2.5 py-1 rounded-full transition-colors shadow-lg">
       {i18n.language === 'en' ? 'বাংলা' : 'EN'}
     </button>
+  )
+}
+
+// Banned screen
+function BannedScreen() {
+  const { i18n } = useTranslation()
+  const isBn = i18n.language === 'bn'
+  const { user } = useAuth()
+  return (
+    <div className="min-h-screen bg-surface-900 flex items-center justify-center px-6">
+      <div className="text-center max-w-sm">
+        <div className="text-6xl mb-4">🚫</div>
+        <h1 className="text-2xl font-display font-bold text-red-400 mb-2">Account Banned</h1>
+        <p className={`text-white/50 text-sm leading-relaxed mb-4 ${isBn?'font-bengali':''}`}>
+          {isBn
+            ? 'তোমার অ্যাকাউন্ট admin কর্তৃক নিষিদ্ধ করা হয়েছে। বিস্তারিত জানতে developer-এর সাথে যোগাযোগ করো।'
+            : 'Your account has been banned by admin. Please contact the developer for details.'}
+        </p>
+        <a href="https://arnnikislam.vercel.app"
+          target="_blank" rel="noopener noreferrer"
+          className="text-brand-400 text-sm font-display underline">
+          Contact Developer
+        </a>
+        <p className="text-white/20 text-xs mt-2">{user?.email}</p>
+      </div>
+    </div>
   )
 }
 
@@ -56,9 +85,10 @@ function Loading() {
 
 function ProtectedRoute({ children }) {
   const { user, profile, loading } = useAuth()
-  if (loading) return <Loading/>
-  if (!user)   return <Navigate to="/login"      replace/>
-  if (!profile)return <Navigate to="/onboarding" replace/>
+  if (loading)   return <Loading/>
+  if (!user)     return <Navigate to="/login"      replace/>
+  if (!profile)  return <Navigate to="/onboarding" replace/>
+  if (profile.isBanned) return <BannedScreen/>
   return <>{children}</>
 }
 
@@ -66,7 +96,8 @@ function AppRoutes() {
   const { user, profile, loading } = useAuth()
   if (loading) return <Loading/>
 
-  const isProtected = user && profile
+  const isProtected = user && profile && !profile.isBanned
+  const isAdmin     = user?.uid === ADMIN_UID
 
   return (
     <>
@@ -79,6 +110,7 @@ function AppRoutes() {
         </>
       )}
       <Routes>
+        {/* Public */}
         <Route path="/login" element={
           user && profile ? <Navigate to="/dashboard" replace/> : <Login/>
         }/>
@@ -87,6 +119,15 @@ function AppRoutes() {
           profile  ? <Navigate to="/dashboard" replace/> :
           <Onboarding/>
         }/>
+
+        {/* Admin only */}
+        <Route path="/admin" element={
+          !user                 ? <Navigate to="/login"     replace/> :
+          user.uid !== ADMIN_UID ? <Navigate to="/dashboard" replace/> :
+          <Admin/>
+        }/>
+
+        {/* Protected routes */}
         <Route path="/dashboard"   element={<ProtectedRoute><Dashboard  /></ProtectedRoute>}/>
         <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard/></ProtectedRoute>}/>
         <Route path="/routine"     element={<ProtectedRoute><Routine    /></ProtectedRoute>}/>
@@ -104,7 +145,7 @@ export default function App() {
       <BrowserRouter>
         <AppRoutes/>
         <Toaster position="top-center" toastOptions={{
-          duration: 3000,
+          duration: 3500,
           style: {
             background:'#1e293b', color:'#fff',
             border:'1px solid rgba(255,255,255,0.1)',

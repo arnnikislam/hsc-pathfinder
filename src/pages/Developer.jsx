@@ -1,6 +1,10 @@
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
-import { ExternalLink, Github, Youtube, Linkedin, Mail, Globe, Code2, Wifi, Video } from 'lucide-react'
+import { ExternalLink, Github, Youtube, Linkedin, Mail, Globe, Code2, Wifi, Video, Shield } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+
+const ADMIN_UID = '9vzlZq07o4MCRMm50zdTnYwFSLI2'
 
 const DEV_PHOTO = 'https://i.ibb.co/yBBqNC9t/20250608-162252.jpg'
 
@@ -20,7 +24,10 @@ const SKILLS = [
 
 export default function Developer() {
   const { t, i18n } = useTranslation()
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const isBn = i18n.language === 'bn'
+  const isAdmin = user?.uid === ADMIN_UID
 
   return (
     <div className="min-h-screen bg-surface-900">
@@ -106,6 +113,15 @@ export default function Developer() {
             <span className="text-white/20 text-[10px]">HSC 2026 Edition</span>
           </div>
         </div>
+
+        {/* Admin panel shortcut - only visible to admin */}
+        {isAdmin && (
+          <button onClick={() => navigate('/admin')}
+            className="w-full flex items-center justify-center gap-2 bg-brand-500/15 border border-brand-500/25 text-brand-400 py-3 rounded-xl font-display font-semibold text-sm active:scale-95 transition-all mb-4">
+            <Shield size={15}/>
+            Admin Panel
+          </button>
+        )}
 
         <div className="text-center py-4">
           <p className={`text-white/30 text-xs mb-1 ${isBn ? 'font-bengali' : ''}`}>{t('developer.credit')}</p>
