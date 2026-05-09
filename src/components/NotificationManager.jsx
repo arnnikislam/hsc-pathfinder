@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../firebase/config'
@@ -16,16 +16,16 @@ const REMINDER_TIMES = [
 const PUSH_EN = [
   "📚 Time to study! You haven't reached your daily goal yet.",
   "🎯 Keep going! Your HSC dream needs your focus today.",
-  "💪 Don't stop now! Log your study hours and stay on track.",
+  "💪 Don't stop now! Log your study hours.",
   "⏰ Daily check: Have you studied enough today?",
-  "🔥 Every hour counts! Open HSC PathFinder and log your study.",
+  "🔥 Every hour counts! Open HSC PathFinder.",
 ]
 const PUSH_BN = [
   "📚 পড়ার সময়! আজকের লক্ষ্য এখনো পূরণ হয়নি।",
   "🎯 চালিয়ে যাও! তোমার এইচএসসির স্বপ্ন তোমার মনোযোগ চায়।",
   "💪 থামবে না! পড়ার সময় লগ করো।",
   "⏰ দৈনিক চেক: আজ পর্যাপ্ত পড়েছো?",
-  "🔥 প্রতিটি ঘণ্টা গুরুত্বপূর্ণ! HSC PathFinder খোলো।",
+  "🔥 প্রতিটি ঘণ্টা গুরুত্বপূর্ণ!",
 ]
 
 async function getTodayMinutes(uid) {
@@ -34,15 +34,13 @@ async function getTodayMinutes(uid) {
     const snap  = await getDocs(query(
       collection(db, 'studyLogs'),
       where('userId', '==', uid),
-      where('date',   '==', today)
+      where('date', '==', today)
     ))
     return snap.docs.reduce((s, d) => s + (d.data().minutes || 0), 0)
-  } catch { return 0 }
-}
-
-function getReminderKey(label) {
-  const today = format(new Date(), 'yyyy-MM-dd')
-  return `reminder_${today}_${label}`
+  } catch (e) {
+    console.error('getTodayMinutes error:', e)
+    return 0
+  }
 }
 
 function msUntilTime(hour, minute) {
@@ -53,182 +51,174 @@ function msUntilTime(hour, minute) {
   return target - now
 }
 
-// Register service worker and schedule background reminders
-async function registerServiceWorkerReminders(goalMinutes, lang) {
-  if (!('serviceWorker' in navigator)) return
-
-  try {
-    // Register our custom SW
-    const reg = await navigator.serviceWorker.register('/sw-custom.js', { scope: '/' })
-    await navigator.serviceWorker.ready
-
-    console.log('[SW] Registered, scheduling reminders...')
-
-    // Tell SW to schedule the reminders
-    if (reg.active) {
-      reg.active.postMessage({
-        type: 'SCHEDULE_REMINDERS',
-        goalMinutes,
-        lang,
-      })
-    } else if (reg.installing || reg.waiting) {
-      const sw = reg.installing || reg.waiting
-      sw.addEventListener('statechange', () => {
-        if (sw.state === 'activated') {
-          sw.postMessage({ type: 'SCHEDULE_REMINDERS', goalMinutes, lang })
-        }
-      })
-    }
-  } catch (err) {
-    console.error('[SW] Registration failed:', err)
-  }
+function getReminderKey(label) {
+  return `reminder_${format(new Date(), 'yyyy-MM-dd')}_${label}`
 }
 
-// Show notification via SW (works when app is open)
-async function showPushNotification(title, body, label) {
-  if (!('Notification' in window)) return false
+// Show browser notification — tries SW first, falls back to basic
+async function showNotification(title, body, label) {
+  const icon = '/logo.svg'
 
-  if (Notification.permission === 'default') {
-    const perm = await Notification.requestPermission()
-    if (perm !== 'granted') return false
-  }
-
-  if (Notification.permission !== 'granted') return false
-
-  try {
-    if ('serviceWorker' in navigator) {
+  // Try SW notification
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    try {
       const reg = await navigator.serviceWorker.ready
       await reg.showNotification(title, {
-        body,
-        icon:    '/logo.svg',
-        badge:   '/logo.svg',
-        tag:     'study-reminder-' + label,
+        body, icon,
+        tag:      'hsc-' + label,
         renotify: true,
-        vibrate: [200, 100, 200],
-        actions: [
-          { action: 'open',    title: '📖 Open App' },
-          { action: 'dismiss', title: '✕ Dismiss'   },
-        ]
+        vibrate:  [300, 100, 300],
       })
+      console.log('✅ SW notification shown')
       return true
+    } catch (e) {
+      console.log('SW notification failed:', e)
     }
-    new Notification(title, { body, icon: '/logo.svg' })
-    return true
-  } catch (err) {
-    console.error('Push failed:', err)
-    return false
   }
+
+  // Fallback: basic Notification API
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      new Notification(title, { body, icon })
+      console.log('✅ Basic notification shown')
+      return true
+    } catch (e) {
+      console.log('Basic notification failed:', e)
+    }
+  }
+
+  return false
 }
 
 export async function requestNotificationPermission() {
-  if (!('Notification' in window)) return 'unsupported'
-  if (Notification.permission !== 'default') return Notification.permission
-  const perm = await Notification.requestPermission()
-  console.log('Notification permission:', perm)
-  return perm
+  if (!('Notification' in window)) {
+    console.log('Notifications not supported')
+    return 'unsupported'
+  }
+  if (Notification.permission === 'granted') return 'granted'
+  if (Notification.permission === 'denied') return 'denied'
+  const result = await Notification.requestPermission()
+  console.log('Permission result:', result)
+  return result
 }
 
 export default function NotificationManager() {
   const { user, profile } = useAuth()
   const timersRef = useRef([])
+  const checkedRef = useRef(new Set())
 
   useEffect(() => {
     if (!user || !profile) return
 
+    // Clear previous timers
     timersRef.current.forEach(clearTimeout)
     timersRef.current = []
+    checkedRef.current = new Set()
 
     const isBn     = localStorage.getItem('hsc_lang') === 'bn'
-    const lang     = isBn ? 'bn' : 'en'
     const goalMins = (profile.dailyGoal || 8) * 60
 
-    // 1. Request notification permission
+    // Step 1: Request notification permission immediately
     requestNotificationPermission()
 
-    // 2. Register SW for background notifications (even when app closed)
-    registerServiceWorkerReminders(goalMins, lang)
-
-    // 3. Also schedule in-app timers (when app IS open — more reliable)
-    const checkAndNotify = async (label) => {
+    // Core function: check goal and fire all reminders
+    const checkAndFire = async (label) => {
       const key = getReminderKey(label)
+
+      // Skip if already fired today
       if (localStorage.getItem(key)) {
-        console.log(`Already notified for ${label} today`)
+        console.log(`Reminder ${label} already sent today`)
         return
       }
 
-      const studiedMins = await getTodayMinutes(user.uid)
-      if (studiedMins >= goalMins) {
-        console.log(`Goal met — skipping ${label} reminder`)
+      const studied = await getTodayMinutes(user.uid)
+      console.log(`[${label}] Studied: ${studied}m / Goal: ${goalMins}m`)
+
+      if (studied >= goalMins) {
+        console.log(`[${label}] Goal met! No reminder needed.`)
+        localStorage.setItem(key, 'goal_met')
         return
       }
 
-      // Mark sent
+      // Mark as sent
       localStorage.setItem(key, '1')
 
-      const remaining = goalMins - studiedMins
+      const remaining = goalMins - studied
       const remH = Math.floor(remaining / 60)
       const remM = remaining % 60
       const remStr = remH > 0 ? `${remH}h ${remM}m` : `${remM}m`
+      const timeEmoji = label === 'afternoon' ? '☀️' : label === 'evening' ? '🌆' : '🌙'
+      const idx   = Math.floor(Math.random() * 5)
+      const msgs  = isBn ? PUSH_BN : PUSH_EN
+      const body  = `${msgs[idx]} (${isBn ? 'বাকি' : 'Remaining'}: ${remStr})`
+      const title = `HSC PathFinder ${timeEmoji}`
 
-      const idx     = Math.floor(Math.random() * 5)
-      const msgs    = isBn ? PUSH_BN : PUSH_EN
-      const timeEmoji = label==='afternoon' ? '☀️' : label==='evening' ? '🌆' : '🌙'
-      const body    = msgs[idx] + (isBn ? ` বাকি: ${remStr}` : ` Remaining: ${remStr}`)
+      // 1. Push notification
+      const pushed = await showNotification(title, body, label)
 
-      // Push notification
-      const pushed = await showPushNotification('HSC PathFinder ' + timeEmoji, body, label)
-      console.log(`Push ${pushed?'✅':'❌'} for ${label}`)
-
-      // In-app toast as fallback (always shows if app is open)
-      toast(body, {
-        icon: timeEmoji,
-        duration: 8000,
-        style: {
-          background: '#1e293b',
-          color: '#fff',
-          border: '1px solid rgba(14,165,233,0.3)',
-          maxWidth: '320px',
-          fontSize: isBn ? '12px' : '13px',
-          fontFamily: isBn ? 'Hind Siliguri, sans-serif' : 'Sora, sans-serif',
+      // 2. In-app toast (ALWAYS show — even if push blocked)
+      toast(
+        (t) => (
+          <div onClick={() => toast.dismiss(t.id)}>
+            <p className="font-bold text-sm">{title}</p>
+            <p className="text-xs mt-0.5 opacity-80">{body}</p>
+          </div>
+        ),
+        {
+          duration: 10000,
+          icon: timeEmoji,
+          style: {
+            background: '#1e293b',
+            color: '#fff',
+            border: '1px solid #0ea5e9',
+            maxWidth: '320px',
+          }
         }
-      })
+      )
 
-      // Email
+      // 3. Email reminder
       if (profile.email) {
-        const sent = await sendStudyReminder({
-          name:           profile.name,
+        console.log('Sending email to:', profile.email)
+        const emailSent = await sendStudyReminder({
+          name:           profile.name || 'Student',
           email:          profile.email,
-          studiedMinutes: studiedMins,
+          studiedMinutes: studied,
           goalMinutes:    goalMins,
         })
-        console.log(`Email ${sent?'✅':'❌'} for ${label}`)
+        console.log(`Email ${emailSent ? '✅ sent' : '❌ failed'}`)
+      } else {
+        console.warn('No email in profile — skipping email')
       }
     }
 
-    // Schedule timers for remaining reminder times today
-    REMINDER_TIMES.forEach(({ hour, minute, label }) => {
-      const ms = msUntilTime(hour, minute)
-      if (ms < 24 * 60 * 60 * 1000) { // Only schedule today's remaining ones
-        console.log(`Scheduling ${label} in ${Math.round(ms/60000)} min`)
-        const id = setTimeout(() => {
-          checkAndNotify(label)
-          // Daily repeat
-          const daily = setInterval(() => checkAndNotify(label), 24*60*60*1000)
-          timersRef.current.push(daily)
-        }, ms)
-        timersRef.current.push(id)
+    // Step 2: Check for MISSED reminders (app opened after reminder time)
+    const now = new Date()
+    const nowHour = now.getHours()
+
+    REMINDER_TIMES.forEach(({ hour, label }) => {
+      if (nowHour >= hour) {
+        const key = getReminderKey(label)
+        if (!localStorage.getItem(key)) {
+          console.log(`Missed ${label} reminder (now ${nowHour}:xx, reminder at ${hour}:00) — firing now`)
+          // Small delay so app finishes loading first
+          const delay = setTimeout(() => checkAndFire(label), 3000)
+          timersRef.current.push(delay)
+        }
       }
     })
 
-    // Check if we MISSED any reminder today (app wasn't open)
-    // E.g. it's 3PM — we missed the 2PM one
-    const now = new Date()
-    REMINDER_TIMES.forEach(({ hour, label }) => {
-      const key = getReminderKey(label)
-      if (now.getHours() > hour && !localStorage.getItem(key)) {
-        // Missed — check and notify now
-        console.log(`Missed ${label} reminder — checking now`)
-        checkAndNotify(label)
+    // Step 3: Schedule upcoming reminders today
+    REMINDER_TIMES.forEach(({ hour, minute, label }) => {
+      const ms = msUntilTime(hour, minute)
+      if (ms < 24 * 60 * 60 * 1000) {
+        console.log(`Scheduling ${label} in ${Math.round(ms / 60000)} min`)
+        const id = setTimeout(() => {
+          checkAndFire(label)
+          // Repeat daily
+          const daily = setInterval(() => checkAndFire(label), 24 * 60 * 60 * 1000)
+          timersRef.current.push(daily)
+        }, ms)
+        timersRef.current.push(id)
       }
     })
 

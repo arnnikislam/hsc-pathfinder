@@ -6,11 +6,11 @@ import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import CountdownBanner from '../components/CountdownBanner'
 import BottomNav from '../components/BottomNav'
+import MotivationalQuote from '../components/MotivationalQuote'
+import StudyGraph from '../components/StudyGraph'
 import toast from 'react-hot-toast'
 import { Plus, Clock, Flame, TrendingUp, CalendarDays, Trash2 } from 'lucide-react'
 import { calculateAndSaveStreak } from '../utils/streakUtils'
-import StudyGraph from '../components/StudyGraph'
-import MotivationalQuote from '../components/MotivationalQuote'
 
 function ProgressRing({ percent, size = 110, stroke = 9 }) {
   const capped = Math.min(percent, 100)
@@ -45,15 +45,11 @@ function fmt(m, t) {
   return `${min}${ms}`
 }
 
-// Recalculate totalMinutes + daysStudied from scratch — prevents drift
 async function recalcStats(uid) {
   const snap  = await getDocs(query(collection(db, 'studyLogs'), where('userId','==',uid)))
   const total = snap.docs.reduce((s,d) => s + (d.data().minutes||0), 0)
   const dates = new Set(snap.docs.map(d => d.data().date).filter(Boolean))
-  await updateDoc(doc(db,'users',uid), {
-    totalMinutes: total,
-    daysStudied:  dates.size,
-  })
+  await updateDoc(doc(db,'users',uid), { totalMinutes: total, daysStudied: dates.size })
   return { total, daysStudied: dates.size }
 }
 
@@ -83,22 +79,21 @@ export default function Dashboard() {
     try {
       const today = format(new Date(), 'yyyy-MM-dd')
       const snap  = await getDocs(query(
-        collection(db, 'studyLogs'),
+        collection(db,'studyLogs'),
         where('userId','==',user.uid),
         where('date','==',today)
       ))
-      const logs = snap.docs.map(d => ({id:d.id,...d.data()}))
-      logs.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0))
+      const logs = snap.docs.map(d=>({id:d.id,...d.data()}))
+      logs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0))
       setTodayLogs(logs)
-      setTodayMinutes(logs.reduce((s,l) => s+l.minutes, 0))
-    } catch (err) {
+      setTodayMinutes(logs.reduce((s,l)=>s+l.minutes,0))
+    } catch(err) {
       console.error(err)
     } finally {
       setLoadingLogs(false)
     }
   }
 
-  // On mount: recalc stats + streak to fix any existing wrong values
   useEffect(() => {
     if (!user) return
     fetchTodayLogs()
@@ -111,32 +106,28 @@ export default function Dashboard() {
     const h    = Math.max(0, parseInt(addHours)||0)
     const m    = Math.max(0, parseInt(addMins)||0)
     const mins = h*60 + m
-
     if (mins <= 0)   { toast.error('Enter at least 1 minute'); return }
     if (m > 59)      { toast.error('Minutes must be 0–59');    return }
     if (mins > 960)  { toast.error('Max 16h per entry');       return }
     if (todayMinutes + mins > 1200) {
-      toast.error(`Daily max is 20h. Remaining: ${fmt(Math.max(0,1200-todayMinutes),t)}`)
+      toast.error(`Daily max 20h. Remaining: ${fmt(Math.max(0,1200-todayMinutes),t)}`)
       return
     }
-
     setLogging(true)
     try {
-      const today = format(new Date(), 'yyyy-MM-dd')
+      const today = format(new Date(),'yyyy-MM-dd')
       await addDoc(collection(db,'studyLogs'), {
-        userId: user.uid, minutes: mins, date: today, createdAt: Timestamp.now()
+        userId:user.uid, minutes:mins, date:today, createdAt:Timestamp.now()
       })
-      // Recalc stats + streak after every log
       await recalcStats(user.uid)
       await calculateAndSaveStreak(user.uid)
-
       toast.success(`${h>0?h+'h ':''  }${m>0?m+'m':''} logged! 📚`)
       setAddHours(''); setAddMins(''); setShowModal(false)
       await fetchTodayLogs()
       await refreshProfile()
-    } catch (err) {
+    } catch(err) {
       console.error(err)
-      toast.error('Failed to log. Try again.')
+      toast.error('Failed to log.')
     } finally {
       setLogging(false)
     }
@@ -150,9 +141,7 @@ export default function Dashboard() {
       toast.success('Entry deleted')
       await fetchTodayLogs()
       await refreshProfile()
-    } catch (err) {
-      toast.error('Could not delete')
-    }
+    } catch { toast.error('Could not delete') }
   }
 
   const f = (m) => fmt(m, t)
@@ -169,17 +158,13 @@ export default function Dashboard() {
               {profile?.name?.split(' ')[0] || user?.displayName?.split(' ')[0] || 'Student'}
             </h1>
           </div>
-          <img
-            src={getPhotoURL(profile?.name)}
-            alt="avatar" className="w-10 h-10 rounded-full border-2 border-brand-500/50 flex-shrink-0 object-cover"
-            onError={e=>{ e.target.src=`https://ui-avatars.com/api/?name=User&background=0ea5e9&color=fff` }}
-          />
+          <img src={getPhotoURL(profile?.name)} alt="avatar"
+            className="w-10 h-10 rounded-full border-2 border-brand-500/50 flex-shrink-0 object-cover"
+            onError={e=>{ e.target.src=`https://ui-avatars.com/api/?name=User&background=0ea5e9&color=fff` }}/>
         </div>
 
-        <CountdownBanner />
-
-        {/* Motivational Quote */}
-        <MotivationalQuote />
+        <CountdownBanner/>
+        <MotivationalQuote/>
 
         {/* Progress card */}
         <div className="card mb-4">
@@ -189,7 +174,6 @@ export default function Dashboard() {
             </h2>
             <span className="text-xs text-white/40 font-display">{format(new Date(),'dd MMM yyyy')}</span>
           </div>
-
           <div className="flex items-center gap-5">
             <div className="relative flex-shrink-0">
               <ProgressRing percent={percent}/>
@@ -210,35 +194,29 @@ export default function Dashboard() {
               <div>
                 <p className={`text-[10px] text-white/40 ${isBn?'font-bengali':''}`}>{t('dashboard.remaining')}</p>
                 <p className="text-base font-display font-semibold text-accent-400">
-                  {percent>=100 ? (isBn?'সম্পন্ন ✅':'Done ✅') : f(Math.max(0,goalMinutes-todayMinutes))}
+                  {percent>=100?(isBn?'সম্পন্ন ✅':'Done ✅'):f(Math.max(0,goalMinutes-todayMinutes))}
                 </p>
               </div>
             </div>
           </div>
-
           <div className="mt-4 h-2 bg-white/5 rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all duration-700"
-              style={{
-                width:`${percent}%`,
-                background: percent>=100
-                  ? 'linear-gradient(90deg,#22c55e,#16a34a)'
-                  : 'linear-gradient(90deg,#0ea5e9,#f97316)'
-              }}/>
+              style={{width:`${percent}%`,background:percent>=100?'linear-gradient(90deg,#22c55e,#16a34a)':'linear-gradient(90deg,#0ea5e9,#f97316)'}}/>
           </div>
-          {percent>=100 && (
+          {percent>=100&&(
             <p className="text-center text-green-400 text-xs mt-2 font-display">
               🎉 {isBn?'আজকের লক্ষ্য পূরণ! অসাধারণ!':'Goal achieved! Amazing work!'}
             </p>
           )}
         </div>
 
-        {/* Stats row */}
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           {[
-            { icon: Flame,        label: t('dashboard.streak'),      value: streak>0 ? `${streak}🔥` : `0🔥`,  color:'text-orange-400' },
-            { icon: TrendingUp,   label: t('dashboard.total_hours'), value: `${totalHours}h`,                    color:'text-brand-400'  },
-            { icon: CalendarDays, label: 'Days Studied',             value: `${daysStudied}`,                    color:'text-green-400'  },
-          ].map(({ icon:Icon, label, value, color }) => (
+            {icon:Flame,       label:t('dashboard.streak'),      value:`${streak}🔥`,   color:'text-orange-400'},
+            {icon:TrendingUp,  label:t('dashboard.total_hours'), value:`${totalHours}h`, color:'text-brand-400' },
+            {icon:CalendarDays,label:'Days Studied',             value:`${daysStudied}`, color:'text-green-400' },
+          ].map(({icon:Icon,label,value,color})=>(
             <div key={label} className="card text-center py-4">
               <Icon size={16} className={`${color} mx-auto mb-1`}/>
               <p className={`text-[9px] text-white/40 mb-1 ${isBn?'font-bengali':''}`}>{label}</p>
@@ -253,36 +231,30 @@ export default function Dashboard() {
             <h3 className={`text-sm font-display font-semibold text-white/80 ${isBn?'font-bengali':''}`}>
               {t('dashboard.todays_log')}
             </h3>
-            <span className="text-[10px] text-white/30 font-display">{f(todayMinutes)} / 20h max</span>
+            <span className="text-[10px] text-white/30">{f(todayMinutes)} / 20h max</span>
           </div>
-
-          {loadingLogs ? (
+          {loadingLogs?(
             <div className="space-y-2">{[1,2].map(i=><div key={i} className="h-10 rounded-lg shimmer"/>)}</div>
-          ) : todayLogs.length===0 ? (
-            <p className={`text-white/30 text-sm text-center py-6 ${isBn?'font-bengali':''}`}>
-              {t('dashboard.no_logs')}
-            </p>
-          ) : (
+          ):todayLogs.length===0?(
+            <p className={`text-white/30 text-sm text-center py-6 ${isBn?'font-bengali':''}`}>{t('dashboard.no_logs')}</p>
+          ):(
             <div className="space-y-2">
-              {todayLogs.map(log => (
+              {todayLogs.map(log=>(
                 <div key={log.id} className="flex items-center justify-between bg-surface-700 rounded-xl px-4 py-3">
                   <span className="text-white/50 text-xs font-display">
-                    {log.createdAt?.toDate ? format(log.createdAt.toDate(),'hh:mm a') : '—'}
+                    {log.createdAt?.toDate?format(log.createdAt.toDate(),'hh:mm a'):'—'}
                   </span>
                   <div className="flex items-center gap-3">
                     <span className="text-brand-400 font-display font-bold text-sm">{f(log.minutes)}</span>
-                    <button onClick={()=>handleDelete(log)}
-                      className="text-red-400/40 hover:text-red-400 transition-colors active:scale-90">
+                    <button onClick={()=>handleDelete(log)} className="text-red-400/40 hover:text-red-400 active:scale-90">
                       <Trash2 size={13}/>
                     </button>
                   </div>
                 </div>
               ))}
-              {todayLogs.length>1 && (
-                <div className="flex justify-between border-t border-white/5 pt-2 mt-1">
-                  <span className={`text-white/40 text-xs ${isBn?'font-bengali':''}`}>
-                    {isBn?'আজকের মোট':'Total today'}
-                  </span>
+              {todayLogs.length>1&&(
+                <div className="flex justify-between border-t border-white/5 pt-2">
+                  <span className={`text-white/40 text-xs ${isBn?'font-bengali':''}`}>{isBn?'আজকের মোট':'Total today'}</span>
                   <span className="text-white font-display font-bold text-sm">{f(todayMinutes)}</span>
                 </div>
               )}
@@ -291,14 +263,12 @@ export default function Dashboard() {
         </div>
 
         {/* Study Graph */}
-        <StudyGraph uid={user?.uid} goalMinutes={goalMinutes} />
+        <StudyGraph uid={user?.uid} goalMinutes={goalMinutes}/>
 
         {/* Honesty note */}
         <div className="p-3 bg-accent-500/5 border border-accent-500/15 rounded-xl mb-6">
           <p className={`text-accent-400/70 text-xs leading-relaxed ${isBn?'font-bengali':''}`}>
-            📌 {isBn
-              ? 'সততার সাথে পড়ার সময় লগ করো। সর্বোচ্চ দৈনিক লগ ২০ ঘণ্টা।'
-              : 'Log honestly. Daily maximum is 20h.'}
+            📌 {isBn?'সততার সাথে পড়ার সময় লগ করো। সর্বোচ্চ দৈনিক লগ ২০ ঘণ্টা।':'Log honestly. Daily maximum is 20h.'}
           </p>
         </div>
       </div>
@@ -310,57 +280,42 @@ export default function Dashboard() {
       </button>
 
       {/* Modal */}
-      {showModal && (
+      {showModal&&(
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm bg-surface-800 border border-white/10 rounded-3xl p-6 animate-slide-up">
             <h3 className={`text-lg font-display font-bold text-white mb-1 text-center ${isBn?'font-bengali':''}`}>
               {t('dashboard.add_hours')}
             </h3>
             <p className="text-white/25 text-[11px] text-center mb-5 font-display">
-              {isBn
-                ? `আজ আরও লগ করা যাবে: ${f(Math.max(0,1200-todayMinutes))}`
-                : `Remaining allowance today: ${f(Math.max(0,1200-todayMinutes))}`}
+              {isBn?`আজ আরও লগ: ${f(Math.max(0,1200-todayMinutes))}`:`Remaining today: ${f(Math.max(0,1200-todayMinutes))}`}
             </p>
-
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className={`block text-white/50 text-xs mb-1.5 ${isBn?'font-bengali':''}`}>
-                  {t('dashboard.hours')} (0–16)
-                </label>
-                <input type="number" min="0" max="16" value={addHours}
-                  onChange={e=>setAddHours(e.target.value)}
+                <label className={`block text-white/50 text-xs mb-1.5 ${isBn?'font-bengali':''}`}>{t('dashboard.hours')} (0–16)</label>
+                <input type="number" min="0" max="16" value={addHours} onChange={e=>setAddHours(e.target.value)}
                   className="input-field text-center text-2xl font-display font-bold" placeholder="0"/>
               </div>
               <div>
-                <label className={`block text-white/50 text-xs mb-1.5 ${isBn?'font-bengali':''}`}>
-                  {t('dashboard.minutes')} (0–59)
-                </label>
-                <input type="number" min="0" max="59" value={addMins}
-                  onChange={e=>setAddMins(e.target.value)}
+                <label className={`block text-white/50 text-xs mb-1.5 ${isBn?'font-bengali':''}`}>{t('dashboard.minutes')} (0–59)</label>
+                <input type="number" min="0" max="59" value={addMins} onChange={e=>setAddMins(e.target.value)}
                   className="input-field text-center text-2xl font-display font-bold" placeholder="0"/>
               </div>
             </div>
-
-            {previewMins>0 && (
+            {previewMins>0&&(
               <div className="bg-brand-500/10 border border-brand-500/20 rounded-xl px-4 py-2 mb-3 text-center">
-                <span className="text-brand-400 font-display font-semibold text-sm">
-                  ✏️ {f(previewMins)} {isBn?'লগ হবে':'will be logged'}
-                </span>
+                <span className="text-brand-400 font-display font-semibold text-sm">✏️ {f(previewMins)} {isBn?'লগ হবে':'will be logged'}</span>
               </div>
             )}
-
             <p className={`text-accent-400/60 text-xs text-center mb-4 ${isBn?'font-bengali':''}`}>
-              📌 {isBn?'সততার সাথে লগ করো!':'Log honestly — this is for YOUR growth!'}
+              📌 {isBn?'সততার সাথে লগ করো!':'Log honestly!'}
             </p>
-
             <div className="grid grid-cols-2 gap-3">
               <button onClick={()=>{setShowModal(false);setAddHours('');setAddMins('')}} className="btn-secondary">
                 <span className={isBn?'font-bengali':''}>{t('common.close')}</span>
               </button>
               <button onClick={handleLog} disabled={logging} className="btn-primary">
-                {logging
-                  ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"/>
-                  : <span className={isBn?'font-bengali':''}>{t('dashboard.log_study')}</span>}
+                {logging?<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"/>
+                  :<span className={isBn?'font-bengali':''}>{t('dashboard.log_study')}</span>}
               </button>
             </div>
           </div>

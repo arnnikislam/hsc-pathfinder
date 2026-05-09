@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Study Reminder — HSC PathFinder</title>
+</head>
+<body style="margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <!-- Wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f8;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#0ea5e9,#f97316);border-radius:16px 16px 0 0;padding:32px 28px;text-align:center;">
+            <div style="width:60px;height:60px;background:rgba(255,255,255,0.2);border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:28px;">🎓</span>
+            </div>
+            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">HSC PathFinder</h1>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">তোমার লক্ষ্য, তোমার পথ</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="background:#ffffff;padding:28px;border-radius:0 0 16px 16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+            <!-- Greeting -->
+            <h2 style="margin:0 0 6px;color:#1e293b;font-size:18px;font-weight:700;">
+              Hey {{to_name}}! 👋
+            </h2>
+            <p style="margin:0 0 24px;color:#64748b;font-size:14px;line-height:1.5;">
+              তোমার আজকের পড়ার লক্ষ্য এখনো পূরণ হয়নি। চালিয়ে যাও!
+            </p>
+
+            <!-- Progress card -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:20px;">
+              <tr>
+                <td style="padding:20px;">
+                  <p style="margin:0 0 14px;color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">TODAY'S PROGRESS</p>
+
+                  <!-- Studied -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
+                    <tr>
+                      <td style="color:#64748b;font-size:13px;">📚 Today you studied</td>
+                      <td align="right" style="color:#0ea5e9;font-size:15px;font-weight:700;">{{studied_time}}</td>
+                    </tr>
+                  </table>
+
+                  <!-- Goal -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
+                    <tr>
+                      <td style="color:#64748b;font-size:13px;">🎯 Your daily goal</td>
+                      <td align="right" style="color:#1e293b;font-size:15px;font-weight:700;">{{goal_time}}</td>
+                    </tr>
+                  </table>
+
+                  <!-- Divider -->
+                  <hr style="border:none;border-top:1px solid #e2e8f0;margin:12px 0;"/>
+
+                  <!-- Remaining -->
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="color:#64748b;font-size:13px;">⏰ Remaining</td>
+                      <td align="right" style="color:#f97316;font-size:16px;font-weight:800;">{{remaining_time}}</td>
+                    </tr>
+                  </table>
+
+                  <!-- Progress bar -->
+                  <div style="margin-top:16px;background:#e2e8f0;border-radius:99px;height:8px;overflow:hidden;">
+                    <div style="height:8px;border-radius:99px;background:linear-gradient(90deg,#0ea5e9,#f97316);width:50%;"></div>
+                  </div>
+                  <p style="margin:6px 0 0;color:#94a3b8;font-size:11px;text-align:right;">Keep going! 💪</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Motivation box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#f0f9ff,#fff7ed);border:1px solid #bae6fd;border-radius:12px;margin-bottom:24px;">
+              <tr>
+                <td style="padding:18px 20px;">
+                  <p style="margin:0 0 8px;color:#0369a1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">✨ MOTIVATION</p>
+                  <p style="margin:0 0 10px;color:#1e293b;font-size:14px;line-height:1.6;font-style:italic;">"{{motivation_en}}"</p>
+                  <p style="margin:0;color:#475569;font-size:13px;line-height:1.6;font-family:'Noto Sans Bengali',Arial,sans-serif;">{{motivation_bn}}</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA Button -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+              <tr>
+                <td align="center">
+                  <a href="{{app_url}}"
+                    style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 36px;border-radius:12px;letter-spacing:0.3px;">
+                    📖 Open HSC PathFinder
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- HSC countdown note -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;margin-bottom:20px;">
+              <tr>
+                <td style="padding:14px 16px;">
+                  <p style="margin:0;color:#92400e;font-size:13px;text-align:center;">
+                    🗓️ <strong>HSC 2026 Exam starts 02 July 2026</strong> — Every hour counts!
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Footer note -->
+            <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center;line-height:1.6;">
+              You're receiving this because you set a daily study goal.<br/>
+              Built with ❤️ by <a href="https://arnnikislam.vercel.app" style="color:#0ea5e9;text-decoration:none;">Arnnik Islam Payel</a>
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- Bottom credit -->
+        <tr>
+          <td style="padding:16px;text-align:center;">
+            <p style="margin:0;color:#94a3b8;font-size:11px;">
+              © 2026 HSC PathFinder &nbsp;•&nbsp;
+              <a href="{{app_url}}" style="color:#0ea5e9;text-decoration:none;">hsc-pathfinder.vercel.app</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+
+</body>
+</html>

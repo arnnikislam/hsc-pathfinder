@@ -5,13 +5,10 @@ import './index.css'
 
 // Register custom service worker for background notifications
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const reg = await navigator.serviceWorker.register('/sw-custom.js', { scope: '/' })
-      console.log('[SW] Custom SW registered:', reg.scope)
-    } catch (err) {
-      console.error('[SW] Registration failed:', err)
-    }
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw-custom.js', { scope: '/' })
+      .then(reg => console.log('[SW] Registered:', reg.scope))
+      .catch(err => console.log('[SW] Registration failed:', err))
   })
 }
 

@@ -1,16 +1,13 @@
-import { init, send } from '@emailjs/browser'
-
+// EmailJS credentials
 const SERVICE_ID  = 'service_7jciy19'
 const TEMPLATE_ID = 'template_afiithm'
 const PUBLIC_KEY  = 'yUQ2uNvtu1OEbcXGv'
 
-let initialized = false
-
-function ensureInit() {
-  if (!initialized) {
-    init(PUBLIC_KEY)
-    initialized = true
-  }
+function fmtMin(m) {
+  const h = Math.floor(m / 60), min = m % 60
+  if (h > 0 && min > 0) return `${h}h ${min}m`
+  if (h > 0) return `${h}h`
+  return `${min}m`
 }
 
 const MOTIVATIONS_EN = [
@@ -24,29 +21,29 @@ const MOTIVATIONS_BN = [
   "প্রতিটি মিনিটের পড়া তোমার স্বপ্নকে বাস্তবে পরিণত করে। থামবে না! 💪",
   "এইচএসসি ২০২৬ খুব কাছে। আজকের সময়টা কাজে লাগাও। 📚",
   "আজকের পরিশ্রমই আগামীকালের সাফল্য। চালিয়ে যাও! 🌟",
-  "ছোট ছোট পদক্ষেপই বড় সাফল্যের পথ দেখায়। লেগে থাকো! 🎯",
+  "ছোট পদক্ষেপই বড় সাফল্যের পথ দেখায়। লেগে থাকো! 🎯",
   "আজ যত কষ্ট করবে, ফলাফলের দিন তত হাসবে। 💯",
 ]
 
-function fmtMin(m) {
-  const h=Math.floor(m/60), min=m%60
-  if(h>0&&min>0) return `${h}h ${min}m`
-  if(h>0) return `${h}h`
-  return `${min}m`
-}
-
 export async function sendStudyReminder({ name, email, studiedMinutes, goalMinutes }) {
-  if (!email) { console.warn('sendStudyReminder: no email'); return false }
-  ensureInit()
+  if (!email) {
+    console.error('sendStudyReminder: no email provided')
+    return false
+  }
 
   const idx = Math.floor(Math.random() * 5)
 
-  // These variable names MUST match your EmailJS template exactly
-  const params = {
-    name:           name || 'Student',   // {{name}} in template
-    email:          email,               // {{email}} in reply-to
-    to_email:       email,               // {{to_email}} in To field
-    to_name:        name || 'Student',
+  // Build template params - use EXACTLY the variable names in your EmailJS template
+  const templateParams = {
+    // Standard EmailJS fields - these go to To/From/ReplyTo
+    to_name:   name || 'Student',
+    to_email:  email,
+    from_name: 'HSC PathFinder',
+    reply_to:  'noreply@hsc-pathfinder.com',
+
+    // Content variables used in email body
+    name:           name || 'Student',
+    email:          email,
     studied_time:   fmtMin(studiedMinutes),
     remaining_time: fmtMin(Math.max(0, goalMinutes - studiedMinutes)),
     goal_time:      fmtMin(goalMinutes),
@@ -56,18 +53,38 @@ export async function sendStudyReminder({ name, email, studiedMinutes, goalMinut
     app_name:       'HSC PathFinder',
   }
 
+  console.log('Sending email via EmailJS to:', email)
+  console.log('Template params:', templateParams)
+
   try {
-    const res = await send(SERVICE_ID, TEMPLATE_ID, params)
-    console.log('Email sent successfully, status:', res.status, 'to:', email)
-    return true
+    // Use fetch directly - more reliable than the SDK on mobile
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id:  SERVICE_ID,
+        template_id: TEMPLATE_ID,
+        user_id:     PUBLIC_KEY,
+        template_params: templateParams,
+      })
+    })
+
+    const responseText = await response.text()
+    console.log('EmailJS response:', response.status, responseText)
+
+    if (response.ok) {
+      console.log('✅ Email sent successfully to', email)
+      return true
+    } else {
+      console.error('❌ EmailJS error:', response.status, responseText)
+      return false
+    }
   } catch (err) {
-    console.error('EmailJS error:', err?.text || err?.message || err)
+    console.error('❌ EmailJS fetch failed:', err)
     return false
   }
 }
 
-// Keep this for backward compat
-export function scheduleDailyReminder(callback) {
-  // Handled by NotificationManager now
-  console.log('scheduleDailyReminder: now handled by NotificationManager')
+export function scheduleDailyReminder() {
+  // Deprecated — now handled by NotificationManager
 }
