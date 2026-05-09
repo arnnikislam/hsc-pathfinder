@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import { Plus, Clock, Flame, TrendingUp, CalendarDays, Trash2 } from 'lucide-react'
 import { calculateAndSaveStreak } from '../utils/streakUtils'
 import StudyGraph from '../components/StudyGraph'
+import MotivationalQuote from '../components/MotivationalQuote'
 
 function ProgressRing({ percent, size = 110, stroke = 9 }) {
   const capped = Math.min(percent, 100)
@@ -176,6 +177,9 @@ export default function Dashboard() {
         </div>
 
         <CountdownBanner />
+
+        {/* Motivational Quote */}
+        <MotivationalQuote />
 
         {/* Progress card */}
         <div className="card mb-4">
